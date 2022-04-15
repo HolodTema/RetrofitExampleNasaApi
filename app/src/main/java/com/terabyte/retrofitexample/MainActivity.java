@@ -46,6 +46,33 @@ public class MainActivity extends AppCompatActivity {
             if(response.isSuccessful()) {
                 String s = response.body().explanation;
                 textImageDescription.setText(s);
+                // TODO: 15.04.2022 create a request to translate a text in microsoft
+                Retrofit retrofit = new Retrofit.Builder()
+                        .baseUrl(Const.TRANSLATE_API)
+                        .addConverterFactory(GsonConverterFactory.create())
+                        .build();
+                TranslateService translateService = retrofit.create(TranslateService.class);
+                TranslateBody translateBody = new TranslateBody();
+                translateBody.Text = s;
+                Call<TranslateResponse[]> callTranslate = translateService.getTranslate("ru-RU", new TranslateBody[] {translateBody});
+                //command execute works in main thread. You can create your new thread if you want to use execute
+                //command enqueue works in own another thread. So we can work in our main thread later
+                callTranslate.enqueue(new TranslateCallback());
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 if(response.body().media_type.equals("image")) {
                     Picasso.get()
                             .load(response.body().url)
@@ -61,6 +88,22 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onFailure(Call<SpaceResponse> call, Throwable t) {
             Toast.makeText(getApplicationContext(), "Failure to recieve a response from a server", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    class TranslateCallback implements Callback<TranslateResponse[]> {
+
+        @Override
+        public void onResponse(Call<TranslateResponse[]> call, Response<TranslateResponse[]> response) {
+            if(response.isSuccessful()) {
+                String s = response.body()[0].translations[0].text;
+                textImageDescription.setText(s);
+            }
+        }
+
+        @Override
+        public void onFailure(Call<TranslateResponse[]> call, Throwable t) {
+            Toast.makeText(getApplicationContext(), "Failed to translate text with microsoft azure translator api", Toast.LENGTH_LONG).show();
         }
     }
 }
